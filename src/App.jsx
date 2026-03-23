@@ -3,7 +3,7 @@ import {
     CheckCircle, Clock, AlertCircle, LogOut, Edit, Save, X, Mail,
     Search, Building, Shield, BarChart, List
 } from 'lucide-react';
-import { BarChart as RBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart as RBarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { db, auth } from './firebase';
 import {
     collection, doc, setDoc, updateDoc, onSnapshot
@@ -220,6 +220,33 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
             .sort((a, b) => b.timestamp - a.timestamp);
     }, [requests, searchName, schoolName]);
 
+    const campusRequests = useMemo(() => {
+        return requests.filter(r => r.school === schoolName);
+    }, [requests, schoolName]);
+
+    const chartDataByTeacher = useMemo(() => {
+        const counts = {};
+        campusRequests.forEach(r => { counts[r.teacherName] = (counts[r.teacherName] || 0) + 1; });
+        return Object.keys(counts).map(k => ({name: k, count: counts[k]})).sort((a,b)=>b.count-a.count).slice(0, 10);
+    }, [campusRequests]);
+
+    const chartDataByClass = useMemo(() => {
+        const counts = {};
+        campusRequests.forEach(r => { counts[r.className] = (counts[r.className] || 0) + 1; });
+        return Object.keys(counts).map(k => ({name: k, count: counts[k]})).sort((a,b)=>b.count-a.count).slice(0, 10);
+    }, [campusRequests]);
+
+    const chartDataByAttendance = useMemo(() => {
+        const counts = { 'Full': 0, 'Missing': 0, 'Extra': 0 };
+        campusRequests.forEach(r => {
+            if (counts[r.studentStatus] !== undefined) counts[r.studentStatus]++;
+            else counts[r.studentStatus] = 1;
+        });
+        return Object.keys(counts).map(k => ({name: k, value: counts[k]})).filter(d => d.value > 0);
+    }, [campusRequests]);
+
+    const COLORS = ['#005d83', '#5bcaf4', '#bed630', '#f4a05b', '#e06b5c'];
+
     const teacherStats = useMemo(() => {
         return {
             total: myRequests.length,
@@ -334,6 +361,51 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
                 </header>
 
                 <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full -mt-16 pb-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white rounded-2xl shadow-xl p-5 border border-slate-100 lg:col-span-1">
+                            <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-4 flex items-center"><BarChart size={16} className="mr-2 text-[#5bcaf4]"/> Campus Classes</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartDataByClass} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{fontSize: 10, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
+                                        <YAxis type="number" hide />
+                                        <RTooltip cursor={{stroke: '#f1f5f9', strokeWidth: 2}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Line type="monotone" dataKey="count" stroke="#5bcaf4" strokeWidth={4} dot={{ stroke: '#5bcaf4', strokeWidth: 2, r: 4, fill: '#fff'}} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-2xl shadow-xl p-5 border border-slate-100 lg:col-span-1">
+                            <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-4 flex items-center"><BarChart size={16} className="mr-2 text-[#bed630]"/> Campus Teachers</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartDataByTeacher} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{fontSize: 10, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
+                                        <YAxis type="number" hide />
+                                        <RTooltip cursor={{stroke: '#f1f5f9', strokeWidth: 2}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Line type="monotone" dataKey="count" stroke="#bed630" strokeWidth={4} dot={{ stroke: '#bed630', strokeWidth: 2, r: 4, fill: '#fff'}} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-2xl shadow-xl p-5 border border-slate-100 lg:col-span-1 flex flex-col items-center">
+                            <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-2 w-full flex items-center"><Clock size={16} className="mr-2 text-[#f4a05b]"/> Attendance Status</h3>
+                            <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie data={chartDataByAttendance} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
+                                            {chartDataByAttendance.map((entry, index) => ( <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} /> ))}
+                                        </Pie>
+                                        <RTooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '12px', fontWeight: 600, color: '#0f172a'}}/>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
                         <div className="lg:col-span-1">
@@ -697,13 +769,13 @@ function AdminDashboard({ requests, onLogout }) {
                             <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-4 flex items-center"><BarChart size={16} className="mr-2 text-[#5bcaf4]"/> Top Classes</h3>
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <RBarChart data={chartDataByClass} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 12, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
-                                        <RTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                                        <Bar dataKey="count" fill="#5bcaf4" radius={[0, 4, 4, 0]} barSize={20} />
-                                    </RBarChart>
+                                    <LineChart data={chartDataByClass} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{fontSize: 10, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
+                                        <YAxis type="number" hide />
+                                        <RTooltip cursor={{stroke: '#f1f5f9', strokeWidth: 2}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Line type="monotone" dataKey="count" stroke="#5bcaf4" strokeWidth={4} dot={{ stroke: '#5bcaf4', strokeWidth: 2, r: 4, fill: '#fff'}} activeDot={{ r: 6 }} />
+                                    </LineChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
@@ -711,13 +783,13 @@ function AdminDashboard({ requests, onLogout }) {
                             <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-4 flex items-center"><BarChart size={16} className="mr-2 text-[#bed630]"/> Top Teachers</h3>
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <RBarChart data={chartDataByTeacher} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 12, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
-                                        <RTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                                        <Bar dataKey="count" fill="#bed630" radius={[0, 4, 4, 0]} barSize={20} />
-                                    </RBarChart>
+                                    <LineChart data={chartDataByTeacher} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{fontSize: 10, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
+                                        <YAxis type="number" hide />
+                                        <RTooltip cursor={{stroke: '#f1f5f9', strokeWidth: 2}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Line type="monotone" dataKey="count" stroke="#bed630" strokeWidth={4} dot={{ stroke: '#bed630', strokeWidth: 2, r: 4, fill: '#fff'}} activeDot={{ r: 6 }} />
+                                    </LineChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
