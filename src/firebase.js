@@ -1,15 +1,15 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getAuth } from "firebase/auth";
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDZ5mdC-vN1htusotzyfS4bFIkxzGmbywE",
-    authDomain: "emasi-reporting-hub.firebaseapp.com",
-    projectId: "emasi-reporting-hub",
-    storageBucket: "emasi-reporting-hub.firebasestorage.app",
-    messagingSenderId: "899744144586",
-    appId: "1:899744144586:web:16c51b955895ede0a02833",
-    measurementId: "G-4SSY727EGR"
+  apiKey: "AIzaSyChoQc_QM1l6Zy-fzmW9h5mHrSwn7ITg6M",
+  authDomain: "emasi-report-tracking.firebaseapp.com",
+  projectId: "emasi-report-tracking",
+  storageBucket: "emasi-report-tracking.firebasestorage.app",
+  messagingSenderId: "513960948027",
+  appId: "1:513960948027:web:5a81eb1a4fbab70bde871e",
+  measurementId: "G-1SSKEELBN3"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -17,11 +17,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Enable offline persistence
-enableIndexedDbPersistence(db).catch((err) => {
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
     if (err.code == 'failed-precondition') {
-        console.warn("Multiple tabs open, persistence can only be enabled in one tab at a a time.");
+        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
     } else if (err.code == 'unimplemented') {
-        console.warn("The current browser does not support all of the features required to enable persistence.");
+        console.warn('The current browser does not support all of the features required to enable persistence');
     }
 });
 
