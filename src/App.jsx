@@ -3,6 +3,7 @@ import {
     CheckCircle, Clock, AlertCircle, LogOut, Edit, Save, X, Mail,
     Search, Building, Shield, BarChart, List
 } from 'lucide-react';
+import { BarChart as RBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { db, auth } from './firebase';
 import {
     collection, doc, setDoc, updateDoc, onSnapshot
@@ -582,6 +583,33 @@ function AdminDashboard({ requests, onLogout }) {
         };
     }, [requests]);
 
+    const chartDataByTeacher = useMemo(() => {
+        const counts = {};
+        filteredRequests.forEach(r => {
+            counts[r.teacherName] = (counts[r.teacherName] || 0) + 1;
+        });
+        return Object.keys(counts).map(key => ({ name: key, count: counts[key] })).sort((a,b) => b.count - a.count).slice(0, 10);
+    }, [filteredRequests]);
+
+    const chartDataByClass = useMemo(() => {
+        const counts = {};
+        filteredRequests.forEach(r => {
+            counts[r.className] = (counts[r.className] || 0) + 1;
+        });
+        return Object.keys(counts).map(key => ({ name: key, count: counts[key] })).sort((a,b) => b.count - a.count).slice(0, 10);
+    }, [filteredRequests]);
+
+    const chartDataByAttendance = useMemo(() => {
+        const counts = { 'Full': 0, 'Missing': 0, 'Extra': 0 };
+        filteredRequests.forEach(r => {
+            if (counts[r.studentStatus] !== undefined) counts[r.studentStatus]++;
+            else counts[r.studentStatus] = 1;
+        });
+        return Object.keys(counts).map(key => ({ name: key, value: counts[key] })).filter(d => d.value > 0);
+    }, [filteredRequests]);
+
+    const COLORS = ['#005d83', '#5bcaf4', '#bed630', '#f4a05b', '#e06b5c'];
+
     const handleOpenEdit = (req) => {
         setEditingItState(req.id);
         setTempStatus(req.status);
@@ -664,20 +692,82 @@ function AdminDashboard({ requests, onLogout }) {
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white rounded-2xl shadow-xl p-5 border border-slate-100 lg:col-span-1">
+                            <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-4 flex items-center"><BarChart size={16} className="mr-2 text-[#5bcaf4]"/> Top Classes</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RBarChart data={chartDataByClass} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 12, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
+                                        <RTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Bar dataKey="count" fill="#5bcaf4" radius={[0, 4, 4, 0]} barSize={20} />
+                                    </RBarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-2xl shadow-xl p-5 border border-slate-100 lg:col-span-1">
+                            <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-4 flex items-center"><BarChart size={16} className="mr-2 text-[#bed630]"/> Top Teachers</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RBarChart data={chartDataByTeacher} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 12, fill: '#0f172a', fontWeight: 600}} axisLine={false} tickLine={false} />
+                                        <RTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Bar dataKey="count" fill="#bed630" radius={[0, 4, 4, 0]} barSize={20} />
+                                    </RBarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-2xl shadow-xl p-5 border border-slate-100 lg:col-span-1 flex flex-col items-center">
+                            <h3 className="text-sm font-extrabold text-[#005d83] uppercase tracking-wider mb-2 w-full flex items-center"><Clock size={16} className="mr-2 text-[#f4a05b]"/> Attendance Status</h3>
+                            <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={chartDataByAttendance}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={90}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {chartDataByAttendance.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <RTooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                                        <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '12px', fontWeight: 600, color: '#0f172a'}}/>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
 
                         <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/80 flex flex-wrap gap-4 items-center justify-between">
                             <div className="flex flex-wrap gap-4 items-center">
-                                <span className="font-bold text-[#005d83] uppercase tracking-wider text-sm flex items-center"><List size={16} className="mr-2 text-[#5bcaf4]" /> Filter:</span>
-                                <select
-                                    value={filterSchool}
-                                    onChange={e => setFilterSchool(e.target.value)}
-                                    className="border border-slate-200 bg-white rounded-xl py-2 px-4 text-sm font-semibold text-[#005d83] focus:ring-2 focus:ring-[#5bcaf4] focus:border-transparent shadow-sm"
-                                >
-                                    <option value="All">All Campuses</option>
-                                    <option value="EMASI Nam Long">EMASI Nam Long</option>
-                                    <option value="EMASI Vạn Phúc">EMASI Vạn Phúc</option>
-                                </select>
+                                <span className="font-bold text-[#005d83] uppercase tracking-wider text-sm flex items-center hidden sm:flex"><List size={16} className="mr-2 text-[#5bcaf4]" /> View:</span>
+                                
+                                <div className="flex bg-slate-200/50 p-1 rounded-xl">
+                                    <button 
+                                        onClick={() => setFilterSchool('All')} 
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterSchool === 'All' ? 'bg-white text-[#005d83] shadow-sm' : 'text-slate-500 hover:text-[#005d83]'}`}
+                                    >All</button>
+                                    <button 
+                                        onClick={() => setFilterSchool('EMASI Nam Long')} 
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterSchool === 'EMASI Nam Long' ? 'bg-[#bed630] text-[#005d83] shadow-sm' : 'text-slate-500 hover:text-[#005d83]'}`}
+                                    >Nam Long</button>
+                                    <button 
+                                        onClick={() => setFilterSchool('EMASI Vạn Phúc')} 
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterSchool === 'EMASI Vạn Phúc' ? 'bg-[#5bcaf4] text-[#005d83] shadow-sm' : 'text-slate-500 hover:text-[#005d83]'}`}
+                                    >Vạn Phúc</button>
+                                </div>
 
                                 <select
                                     value={filterStatus}
