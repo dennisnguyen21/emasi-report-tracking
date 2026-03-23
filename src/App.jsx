@@ -137,21 +137,7 @@ export default function App() {
                                     />
                                 </div>
 
-                                <div className="mt-4 text-sm bg-[#5bcaf4]/10 p-4 rounded-xl border border-[#5bcaf4]/20">
-                                    <p className="font-bold mb-2 text-[#005d83] flex items-center">
-                                        <Building size={16} className="mr-2 text-[#5bcaf4]" /> Instructions for Teachers:
-                                    </p>
-                                    <ul className="list-none space-y-2 text-[#005d83]/80">
-                                        <li className="flex justify-between items-center bg-white p-2 rounded-lg shadow-sm">
-                                            <span><strong>EMASI Nam Long</strong></span>
-                                            <span className="font-mono font-bold text-[#005d83] bg-[#bed630]/30 px-2 py-0.5 rounded">002</span>
-                                        </li>
-                                        <li className="flex justify-between items-center bg-white p-2 rounded-lg shadow-sm">
-                                            <span><strong>EMASI Vạn Phúc</strong></span>
-                                            <span className="font-mono font-bold text-[#005d83] bg-[#bed630]/30 px-2 py-0.5 rounded">003</span>
-                                        </li>
-                                    </ul>
-                                </div>
+
 
                                 {loginError && (
                                     <div className="mt-3 p-3 bg-red-50 border-l-4 border-red-500 text-sm text-red-700 rounded-r-md">
