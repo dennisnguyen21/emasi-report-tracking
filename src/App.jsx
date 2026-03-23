@@ -212,6 +212,7 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
     });
 
     const [searchName, setSearchName] = useState('');
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
     const uniqueTeachers = useMemo(() => {
         const names = requests
@@ -343,19 +344,23 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
         }));
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this report request? This action cannot be undone.")) {
-            try {
-                const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'report_tracking_requests', id);
-                await deleteDoc(docRef);
-                showToast('Request deleted successfully!', 'success');
-                if (formData.id === id) {
-                    handleCancelEdit();
-                }
-            } catch (error) {
-                console.error("Error deleting document:", error);
-                showToast('Failed to delete request.', 'error');
+    const triggerDelete = (id) => setDeleteConfirmId(id);
+    const cancelDelete = () => setDeleteConfirmId(null);
+
+    const confirmDelete = async () => {
+        if (!deleteConfirmId) return;
+        try {
+            const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'report_tracking_requests', deleteConfirmId);
+            await deleteDoc(docRef);
+            showToast('Request deleted successfully!', 'success');
+            if (formData.id === deleteConfirmId) {
+                handleCancelEdit();
             }
+        } catch (error) {
+            console.error("Error deleting document:", error);
+            showToast('Failed to delete request.', 'error');
+        } finally {
+            setDeleteConfirmId(null);
         }
     };
 
@@ -643,7 +648,7 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
                                                                 <Edit size={14} className="mr-2" /> Modify
                                                             </button>
                                                             <button
-                                                                onClick={() => handleDelete(req.id)}
+                                                                onClick={() => triggerDelete(req.id)}
                                                                 className="flex items-center text-red-500 hover:text-red-500 font-bold text-sm bg-white border border-red-500/20 px-4 py-2 rounded-xl hover:bg-red-50 transition-colors shadow-sm"
                                                             >
                                                                 <Trash2 size={14} className="mr-2" /> Delete
@@ -661,6 +666,43 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
                     </div>
                 </main>
             </div>
+            
+            {/* Glassmorphism Delete Confirmation Modal */}
+            {deleteConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300">
+                    <div className="relative w-full max-w-sm p-8 bg-white/80 backdrop-blur-2xl border border-white shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] rounded-3xl transform transition-all animate-in fade-in zoom-in-95">
+                        <div className="absolute top-4 right-4">
+                            <button onClick={cancelDelete} className="p-2 text-slate-400 hover:text-red-500 bg-white/50 rounded-full hover:bg-red-50 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="flex flex-col items-center text-center mt-2">
+                            <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-red-100">
+                                <Trash2 size={36} className="text-red-500 drop-shadow-sm" />
+                            </div>
+                            <h3 className="text-2xl font-extrabold text-[#005d83] mb-3">Delete Request?</h3>
+                            <p className="text-slate-600 font-medium mb-8 text-sm leading-relaxed px-2">
+                                Are you sure you want to permanently delete this report request? This action cannot be undone.
+                            </p>
+                            <div className="flex w-full gap-3">
+                                <button
+                                    onClick={cancelDelete}
+                                    className="flex-1 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-sm rounded-xl shadow-sm transition-all focus:ring-2 focus:ring-slate-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 py-3 px-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border border-transparent text-white font-extrabold text-sm rounded-xl shadow-md transition-all focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transform hover:-translate-y-0.5"
+                                >
+                                    Yes, Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
