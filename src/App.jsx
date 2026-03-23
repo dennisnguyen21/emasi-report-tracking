@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     CheckCircle, Clock, AlertCircle, LogOut, Edit, Save, X, Mail,
-    Search, Building, Shield, BarChart, List
+    Search, Building, Shield, BarChart, List, Trash2
 } from 'lucide-react';
 import { BarChart as RBarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { db, auth } from './firebase';
 import {
-    collection, doc, setDoc, updateDoc, onSnapshot
+    collection, doc, setDoc, updateDoc, onSnapshot, deleteDoc
 } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 
@@ -343,6 +343,22 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
         }));
     };
 
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this report request? This action cannot be undone.")) {
+            try {
+                const docRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'report_tracking_requests', id);
+                await deleteDoc(docRef);
+                showToast('Request deleted successfully!', 'success');
+                if (formData.id === id) {
+                    handleCancelEdit();
+                }
+            } catch (error) {
+                console.error("Error deleting document:", error);
+                showToast('Failed to delete request.', 'error');
+            }
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans">
             <div className="absolute top-0 left-0 w-full h-[320px] bg-[#005d83] z-0">
@@ -619,12 +635,20 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
                                                             Attendance: <span className="font-bold text-[#005d83] ml-1">{req.studentStatus}</span>
                                                         </div>
 
-                                                        <button
-                                                            onClick={() => handleEdit(req)}
-                                                            className="flex items-center text-[#005d83] hover:text-white font-bold text-sm bg-white border border-[#005d83]/20 px-4 py-2 rounded-xl hover:bg-[#005d83] transition-colors shadow-sm"
-                                                        >
-                                                            <Edit size={14} className="mr-2" /> Modify Request
-                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleEdit(req)}
+                                                                className="flex items-center text-[#005d83] hover:text-[#005d83] font-bold text-sm bg-white border border-[#005d83]/20 px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+                                                            >
+                                                                <Edit size={14} className="mr-2" /> Modify
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(req.id)}
+                                                                className="flex items-center text-red-500 hover:text-red-500 font-bold text-sm bg-white border border-red-500/20 px-4 py-2 rounded-xl hover:bg-red-50 transition-colors shadow-sm"
+                                                            >
+                                                                <Trash2 size={14} className="mr-2" /> Delete
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
