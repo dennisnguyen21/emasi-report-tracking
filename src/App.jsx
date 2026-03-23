@@ -12,6 +12,14 @@ import { signInAnonymously } from 'firebase/auth';
 
 const APP_ID = 'emasi-reporting-hub';
 
+const toTitleCase = (str) => {
+    if (!str) return '';
+    return str.replace(
+        /\w\S*/g,
+        (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    );
+};
+
 // --- UI COMPONENTS ---
 
 const Toast = ({ message, type = 'success', onClose }) => {
@@ -208,7 +216,7 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
     const uniqueTeachers = useMemo(() => {
         const names = requests
             .filter(r => r.school === schoolName)
-            .map(r => r.teacherName);
+            .map(r => toTitleCase(r.teacherName.trim()));
         return [...new Set(names)];
     }, [requests, schoolName]);
 
@@ -226,7 +234,10 @@ function TeacherDashboard({ schoolCode, requests, onLogout, showToast }) {
 
     const chartDataByTeacher = useMemo(() => {
         const counts = {};
-        campusRequests.forEach(r => { counts[r.teacherName] = (counts[r.teacherName] || 0) + 1; });
+        campusRequests.forEach(r => { 
+            const name = toTitleCase(r.teacherName.trim());
+            counts[name] = (counts[name] || 0) + 1; 
+        });
         return Object.keys(counts).map(k => ({name: k, count: counts[k]})).sort((a,b)=>b.count-a.count).slice(0, 10);
     }, [campusRequests]);
 
@@ -658,7 +669,8 @@ function AdminDashboard({ requests, onLogout }) {
     const chartDataByTeacher = useMemo(() => {
         const counts = {};
         filteredRequests.forEach(r => {
-            counts[r.teacherName] = (counts[r.teacherName] || 0) + 1;
+            const name = toTitleCase(r.teacherName.trim());
+            counts[name] = (counts[name] || 0) + 1;
         });
         return Object.keys(counts).map(key => ({ name: key, count: counts[key] })).sort((a,b) => b.count - a.count).slice(0, 10);
     }, [filteredRequests]);
