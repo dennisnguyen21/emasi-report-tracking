@@ -1,0 +1,23 @@
+{
+  "name": "emasi-report-tracking",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.27",
+    "firebase": "^12.11.0",
+    "lucide-react": "^0.577.0",
+    "postcss": "^8.5.8",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2"
+  }
+}
