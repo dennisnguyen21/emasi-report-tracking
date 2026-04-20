@@ -1,18 +1,20 @@
 import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyChoQc_QM1l6Zy-fzmW9h5mHrSwn7ITg6M",
-  authDomain: "emasi-report-tracking.firebaseapp.com",
-  projectId: "emasi-report-tracking",
-  storageBucket: "emasi-report-tracking.firebasestorage.app",
-  messagingSenderId: "513960948027",
-  appId: "1:513960948027:web:5a81eb1a4fbab70bde871e",
-  measurementId: "G-1SSKEELBN3"
+    apiKey: "AIzaSyChoQc_QM1l6Zy-fzmW9h5mHrSwn7ITg6M",
+    authDomain: "emasi-report-tracking.firebaseapp.com",
+    projectId: "emasi-report-tracking",
+    storageBucket: "emasi-report-tracking.firebasestorage.app",
+    messagingSenderId: "513960948027",
+    appId: "1:513960948027:web:5a81eb1a4fbab70bde871e",
+    measurementId: "G-1SSKEELBN3"
 };
 
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -25,4 +27,4 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
     }
 });
 
-export { app, auth, db };
+export { app, auth, db, analytics };

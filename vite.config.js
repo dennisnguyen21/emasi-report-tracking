@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/emasi-report-tracking/',
+  base: process.env.NODE_ENV === 'production' ? '/emasi-report-tracking/' : '/',
   plugins: [
     tailwindcss(),
     react(),
