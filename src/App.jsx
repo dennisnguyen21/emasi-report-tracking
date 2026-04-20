@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-const APP_ID = 'emasi-reporting-hub';
+const APP_ID = 'emasi-report-tracking';
 
 const toTitleCase = (str) => {
     if (!str) return '';
@@ -81,7 +81,8 @@ export default function App() {
         // Listen for real-time updates from Firestore
         const colRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'report_tracking_requests');
         const unsub = onSnapshot(colRef, (snapshot) => {
-            const data = snapshot.docs.map(doc => doc.data());
+            console.log("Received snapshot with docs:", snapshot.docs.length);
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setRequests(data);
         }, (error) => {
             console.error("Firestore sync error:", error);
